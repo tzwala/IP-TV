@@ -19,9 +19,9 @@
         #player-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 20; display: flex; align-items: center; justify-content: center; }
         #search-container, .channel-list, #sidebar-playlist-list { background-color: var(--surface-color); }
         .channel-list, #sidebar-playlist-list { list-style: none; padding: 0; margin: 0; flex-grow: 1; overflow-y: auto; }
-        .channel-item, .playlist-list-item { cursor: pointer; border-bottom: 1px solid var(--border-color); transition: background-color 0.2s; }
-        .channel-item { display: flex; align-items: center; }
-        .channel-item:hover, .playlist-list-item:hover { background-color: #2c2c2e; }
+        .channel-item, .playlist-list-item { border-bottom: 1px solid var(--border-color); transition: background-color 0.2s; }
+        .channel-item-clickable:hover { background-color: #2c2c2e; cursor: pointer; }
+        .playlist-list-item:hover { background-color: #2c2c2e; cursor: pointer; }
         .playlist-list-item.active { background-color: var(--bs-primary); color: white; }
         .channel-logo { width: 45px; height: 45px; object-fit: contain; border-radius: 8px; background-color: #333; }
         .nav-btn { color: #a0a0a0; border: none; background: none; } .nav-btn.active { color: var(--bs-primary); } .nav-btn:disabled { color: #555; }
@@ -54,9 +54,7 @@
     <main class="main-content"><div id="playlist-view" class="main-view">
         <div id="search-container" class="p-2 d-none d-flex align-items-center">
             <input type="search" id="search-bar" class="form-control" placeholder="Search channels...">
-            <button id="add-channel-to-playlist-btn" class="btn ms-2 flex-shrink-0 d-none">
-                <i class="bi"></i>
-            </button>
+            <button id="add-channel-to-playlist-btn" class="btn ms-2 flex-shrink-0 d-none"><i class="bi"></i></button>
         </div>
         <ul id="channel-list" class="channel-list"><li id="initial-message" class="p-5 text-center text-secondary"><i class="bi bi-list fs-1"></i><p class="mt-2">Open the playlist manager to start.</p></li></ul>
     </div><div id="player-view" class="main-view d-none"><div id="player-overlay" class="d-none"><div class="spinner-border text-light" role="status"><span class="visually-hidden">Loading...</span></div></div><div class="player-header d-flex align-items-center p-2"><button id="back-to-list-btn" class="btn btn-sm text-white fs-4 me-2"><i class="bi bi-arrow-left"></i></button><span id="player-channel-name" class="fw-bold text-truncate">Player</span></div><div class="video-wrapper"><video id="video-player" controls autoplay playsinline></video></div><div class="youtube-player-wrapper d-none"><iframe id="youtube-player" allow="autoplay; encrypted-media" allowfullscreen></iframe></div></div></main>
@@ -64,16 +62,15 @@
     <div class="toast-container position-fixed bottom-0 end-0 p-3"></div>
 
     <!-- Modals -->
-    <div class="modal fade" id="addYTChannelToPlaylistModal" tabindex="-1">
-        <div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Add YouTube Channel to Playlist</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="mb-3"><label class="form-label">Channel Name</label><input type="text" id="add-yt-to-playlist-name" class="form-control"></div><div class="mb-3"><label class="form-label">YouTube Channel URL</label><input type="url" id="add-yt-to-playlist-url" class="form-control" placeholder=".../channel/UC..."><div class="form-text">Use the full channel URL with the Channel ID.</div></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="button" class="btn btn-primary" id="save-yt-channel-to-playlist-btn">Add Channel</button></div></div></div>
-    </div>
-    <div class="modal fade" id="addChannelToPlaylistModal" tabindex="-1">
-        <div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Add Stream to Current Playlist</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="mb-3"><label class="form-label">Channel Name</label><input type="text" id="add-channel-to-playlist-name" class="form-control"></div><div class="mb-3"><label class="form-label">M3U8 Stream URL</label><input type="url" id="add-channel-to-playlist-url" class="form-control"></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="button" class="btn btn-primary" id="save-channel-to-playlist-btn">Add Channel</button></div></div></div>
-    </div>
+    <!-- NEW: Modal for Editing an existing channel's details -->
+    <div class="modal fade" id="editChannelModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Edit Channel</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="mb-3"><label class="form-label">Channel Name</label><input type="text" id="edit-channel-name" class="form-control"></div><div class="mb-3"><label class="form-label">Channel Logo URL</label><input type="url" id="edit-channel-logo" class="form-control"></div><div class="mb-3"><label class="form-label">Stream/Channel URL</label><input type="url" id="edit-channel-url" class="form-control"></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="button" class="btn btn-primary" id="save-channel-edit-btn">Save Changes</button></div></div></div></div>
+
+    <div class="modal fade" id="addYTChannelToPlaylistModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Add YouTube Channel to Playlist</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="mb-3"><label class="form-label">Channel Name</label><input type="text" id="add-yt-to-playlist-name" class="form-control"></div><div class="mb-3"><label class="form-label">YouTube Channel URL</label><input type="url" id="add-yt-to-playlist-url" class="form-control" placeholder=".../channel/UC..."><div class="form-text">Use the full channel URL with the Channel ID.</div></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="button" class="btn btn-primary" id="save-yt-channel-to-playlist-btn">Add Channel</button></div></div></div></div>
+    <div class="modal fade" id="addChannelToPlaylistModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Add Stream to Current Playlist</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="mb-3"><label class="form-label">Channel Name</label><input type="text" id="add-channel-to-playlist-name" class="form-control"></div><div class="mb-3"><label class="form-label">Channel Logo URL (Optional)</label><input type="url" id="add-channel-to-playlist-logo" class="form-control"><div class="form-text">Leave blank for a default icon.</div></div><div class="mb-3"><label class="form-label">M3U8 Stream URL</label><input type="url" id="add-channel-to-playlist-url" class="form-control"></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="button" class="btn btn-primary" id="save-channel-to-playlist-btn">Add Channel</button></div></div></div></div>
     <div class="modal fade" id="settingsModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title"><i class="bi bi-gear-wide-connected me-2"></i>App Settings</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="mb-3"><label for="custom-proxy-input" class="form-label">Custom CORS Proxy URL</label><input type="url" class="form-control" id="custom-proxy-input" placeholder="e.g., https://my-proxy.com/?url="><div class="form-text">For geo-blocked streams. Leave blank to use default. Must end with `?url=` or similar.</div></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" id="reset-proxy-btn">Reset to Default</button><button type="button" class="btn btn-primary" id="save-settings-btn">Save Settings</button></div></div></div></div>
-    <div class="modal fade" id="editPlaylistModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Edit Playlist</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="mb-3"><label class="form-label">Playlist Name</label><input type="text" id="edit-playlist-name-input" class="form-control"></div><hr><div id="edit-youtube-container" class="d-none"><div class="mb-3"><label class="form-label">YouTube Channel URL</label><input type="url" id="edit-yt-channel-url" class="form-control"><div class="form-text">Use the full channel URL with the Channel ID (.../channel/UC...). Only editable for single-channel playlists.</div></div></div><div id="edit-url-container" class="d-none"><div class="mb-3"><label class="form-label">Playlist M3U URL</label><input type="url" id="edit-url-playlist-url" class="form-control"></div></div><div id="edit-text-container" class="d-none"><div class="mb-3"><label class="form-label">M3U Text Content</label><textarea id="edit-text-playlist-content" class="form-control" rows="8"></textarea></div></div><div id="edit-single-stream-container" class="d-none"><div class="mb-3"><label class="form-label">Stream Name</label><input type="text" id="edit-single-channel-name" class="form-control"></div><div class="mb-3"><label class="form-label">M3U8 Stream URL</label><input type="url" id="edit-single-channel-url" class="form-control"></div></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="button" class="btn btn-primary" id="save-edit-playlist-btn">Save Changes</button></div></div></div></div>
+    <div class="modal fade" id="editPlaylistModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Edit Playlist</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="mb-3"><label class="form-label">Playlist Name</label><input type="text" id="edit-playlist-name-input" class="form-control"></div><hr><div id="edit-youtube-container" class="d-none"><div class="mb-3"><label class="form-label">YouTube Channel URL</label><input type="url" id="edit-yt-channel-url" class="form-control"><div class="form-text">Only editable for single-channel YouTube playlists. Use the list view to edit individual channels.</div></div></div><div id="edit-url-container" class="d-none"><div class="mb-3"><label class="form-label">Playlist M3U URL</label><input type="url" id="edit-url-playlist-url" class="form-control"></div></div><div id="edit-text-container" class="d-none"><div class="mb-3"><label class="form-label">M3U Text Content</label><textarea id="edit-text-playlist-content" class="form-control" rows="8"></textarea></div></div><div id="edit-single-stream-container" class="d-none"><div class="mb-3"><label class="form-label">Stream Name</label><input type="text" id="edit-single-channel-name" class="form-control"></div><div class="mb-3"><label class="form-label">M3U8 Stream URL</label><input type="url" id="edit-single-channel-url" class="form-control"></div></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="button" class="btn btn-primary" id="save-edit-playlist-btn">Save Changes</button></div></div></div></div>
     <div class="modal fade" id="addYoutubeChannelModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Add YouTube Playlist</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="mb-3"><label class="form-label">Playlist Name</label><input type="text" id="yt-channel-name" class="form-control" placeholder="e.g., News Channels"></div><div class="mb-3"><label class="form-label">First YouTube Channel URL (Optional)</label><input type="url" id="yt-channel-url" class="form-control"><div class="form-text">You can start with an empty playlist and add channels later.</div></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="button" class="btn btn-primary" id="save-yt-channel">Save Playlist</button></div></div></div></div>
-    <div class="modal fade" id="addSingleChannelModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Add Single Stream</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="mb-3"><label class="form-label">Stream Name</label><input type="text" id="single-channel-name" class="form-control"></div><div class="mb-3"><label class="form-label">M3U8 Stream URL</label><input type="url" id="single-channel-url" class="form-control"></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="button" class="btn btn-primary" id="save-single-channel">Save Stream</button></div></div></div></div>
+    <div class="modal fade" id="addSingleChannelModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Add Single Stream</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="mb-3"><label class="form-label">Stream Name</label><input type="text" id="single-channel-name" class="form-control"></div><div class="mb-3"><label class="form-label">Channel Logo URL (Optional)</label><input type="url" id="single-channel-logo" class="form-control"><div class="form-text">Leave blank for a default icon.</div></div><div class="mb-3"><label class="form-label">M3U8 Stream URL</label><input type="url" id="single-channel-url" class="form-control"></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="button" class="btn btn-primary" id="save-single-channel">Save Stream</button></div></div></div></div>
     <div class="modal fade" id="addUrlPlaylistModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Add Playlist from URL</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="mb-3"><label class="form-label">Playlist Name</label><input type="text" id="url-playlist-name" class="form-control"></div><div class="mb-3"><label class="form-label">Playlist M3U URL</label><input type="url" id="url-playlist-url" class="form-control"></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="button" class="btn btn-primary" id="save-url-playlist"><span class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span><span class="button-text">Fetch and Save</span></button></div></div></div></div>
     <div class="modal fade" id="addTextPlaylistModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Add Playlist from Text</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="mb-3"><label class="form-label">Playlist Name</label><input type="text" id="text-playlist-name" class="form-control"></div><div class="mb-3"><label class="form-label">M3U Text Content</label><textarea id="text-playlist-content" class="form-control" rows="8"></textarea></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="button" class="btn btn-primary" id="save-text-playlist">Parse and Save</button></div></div></div></div>
     
@@ -81,55 +78,62 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        let playlists = []; let activePlaylistId = null; let editingPlaylistId = null; let hls = null;
+        let playlists = []; let activePlaylistId = null; let editingPlaylistId = null; let editingChannelIndex = -1; let hls = null;
         const DEFAULT_PROXY_URL = 'https://api.allorigins.win/raw?url=';
+        const DEFAULT_LOGO_URL = 'https://cdn-icons-png.flaticon.com/512/272/272037.png';
 
         const sidebarPlaylistList = document.getElementById('sidebar-playlist-list'); const channelList = document.getElementById('channel-list'); const videoPlayer = document.getElementById('video-player'); const youtubePlayer = document.getElementById('youtube-player'); const videoWrapper = document.querySelector('.video-wrapper'); const youtubeWrapper = document.querySelector('.youtube-player-wrapper'); const playerOverlay = document.getElementById('player-overlay'); const searchBar = document.getElementById('search-bar'); const playerChannelName = document.getElementById('player-channel-name'); const m3uFileInput = document.getElementById('m3u-file-input');
         
-        const settingsModal = new bootstrap.Modal(document.getElementById('settingsModal')); const editModal = new bootstrap.Modal(document.getElementById('editPlaylistModal'));
+        const settingsModal = new bootstrap.Modal(document.getElementById('settingsModal')); const editPlaylistModal = new bootstrap.Modal(document.getElementById('editPlaylistModal'));
+        const editChannelModal = new bootstrap.Modal(document.getElementById('editChannelModal')); // NEW
         const ytModal = new bootstrap.Modal(document.getElementById('addYoutubeChannelModal')); const singleChannelModal = new bootstrap.Modal(document.getElementById('addSingleChannelModal')); const urlPlaylistModal = new bootstrap.Modal(document.getElementById('addUrlPlaylistModal')); const textPlaylistModal = new bootstrap.Modal(document.getElementById('addTextPlaylistModal'));
         const addChannelToPlaylistModal = new bootstrap.Modal(document.getElementById('addChannelToPlaylistModal'));
         const addYTChannelToPlaylistModal = new bootstrap.Modal(document.getElementById('addYTChannelToPlaylistModal'));
 
         sidebarPlaylistList.addEventListener('click', handleSidebarClick);
         document.getElementById('save-settings-btn').addEventListener('click', saveSettings); document.getElementById('reset-proxy-btn').addEventListener('click', resetProxy);
-        document.getElementById('save-edit-playlist-btn').addEventListener('click', handleSaveEdit);
+        document.getElementById('save-edit-playlist-btn').addEventListener('click', handleSavePlaylistEdit);
+        document.getElementById('save-channel-edit-btn').addEventListener('click', handleSaveChannelEdit); // NEW
         document.getElementById('save-yt-channel').addEventListener('click', addYoutubePlaylist);
-        document.getElementById('save-single-channel').addEventListener('click', addSingleStream); document.getElementById('save-url-playlist').addEventListener('click', addPlaylistFromUrl); document.getElementById('save-text-playlist').addEventListener('click', addPlaylistFromText); document.getElementById('add-file-playlist-btn').addEventListener('click', () => m3uFileInput.click()); m3uFileInput.addEventListener('change', addPlaylistFromFile);
-        channelList.addEventListener('click', e => { const t = e.target.closest('.channel-item'); if (t) playItem(t); });
+        document.getElementById('save-single-channel').addEventListener('click', addSingleStream);
+        document.getElementById('save-url-playlist').addEventListener('click', addPlaylistFromUrl); document.getElementById('save-text-playlist').addEventListener('click', addPlaylistFromText);
+        document.getElementById('add-file-playlist-btn').addEventListener('click', () => m3uFileInput.click()); m3uFileInput.addEventListener('change', addPlaylistFromFile);
+        channelList.addEventListener('click', handleChannelListClick); // MODIFIED
         document.getElementById('back-to-list-btn').addEventListener('click', () => { stopAllPlayers(); showView('playlist-view'); });
         document.getElementById('nav-playlist-btn').addEventListener('click', () => showView('playlist-view')); document.getElementById('nav-player-btn').addEventListener('click', () => showView('player-view'));
         searchBar.addEventListener('input', handleSearch);
         document.getElementById('settingsModal').addEventListener('show.bs.modal', () => { document.getElementById('custom-proxy-input').value = getProxyUrl(true); });
-        
         document.getElementById('save-channel-to-playlist-btn').addEventListener('click', handleAddStreamToPlaylist);
         document.getElementById('save-yt-channel-to-playlist-btn').addEventListener('click', handleAddYTChannelToPlaylist);
 
         initializeApp();
 
         function initializeApp() { loadPlaylistsFromStorage(); renderPlaylistSidebar(); const l = localStorage.getItem('activePlaylistId'); if (playlists.some(p => p.id === l)) setActivePlaylist(l); else if (playlists.length > 0) setActivePlaylist(playlists[0].id); }
-        function handleSidebarClick(e) { const i = e.target.closest('.playlist-list-item'); if (!i) return; if (e.target.closest('.edit-playlist-btn')) openEditModal(i.dataset.id); else if (e.target.closest('.delete-playlist-btn')) deletePlaylist(i.dataset.id); else setActivePlaylist(i.dataset.id); e.stopPropagation(); }
         
-        // MODIFIED: This function now handles conversion from URL and Single playlists to Text playlists
-        function handleAddStreamToPlaylist() {
-            const nameInput = document.getElementById('add-channel-to-playlist-name'); const urlInput = document.getElementById('add-channel-to-playlist-url');
-            const name = nameInput.value.trim(); const url = urlInput.value.trim();
-            if (!name || !url) return showToast('Please provide both a name and a URL.');
-            
-            const playlist = playlists.find(p => p.id === activePlaylistId); if (!playlist) return;
+        // MODIFIED: This now handles clicks for both playing and editing channels
+        function handleChannelListClick(e) {
+            const channelItem = e.target.closest('.channel-item');
+            if (!channelItem) return;
 
-            // NEW: Convert URL playlist to a manual 'text' playlist upon modification
-            if (playlist.type === 'url') {
-                playlist.type = 'text';
-                delete playlist.sourceUrl; // Detach from original URL
-                showToast('Playlist converted to manual list. It will no longer sync with the URL.', 'info');
-            } else if (playlist.type === 'single') {
-                playlist.type = 'text';
-                showToast('Playlist converted to a manual list.', 'info');
+            if (e.target.closest('.edit-channel-btn')) {
+                e.stopPropagation(); // Important: prevent the play action
+                openEditChannelModal(activePlaylistId, channelItem.dataset.index);
+            } else if (e.target.closest('.channel-item-clickable')) {
+                playItem(channelItem);
             }
-            
-            playlist.channels.push({ name: name, url: url, logo: 'https://cdn-icons-png.flaticon.com/512/272/272037.png', type: 'm3u' });
-            saveAndRerender(); renderChannelList(playlist.channels); addChannelToPlaylistModal.hide(); nameInput.value = ''; urlInput.value = '';
+        }
+
+        function handleSidebarClick(e) { const i = e.target.closest('.playlist-list-item'); if (!i) return; if (e.target.closest('.edit-playlist-btn')) openEditPlaylistModal(i.dataset.id); else if (e.target.closest('.delete-playlist-btn')) deletePlaylist(i.dataset.id); else setActivePlaylist(i.dataset.id); e.stopPropagation(); }
+        
+        function handleAddStreamToPlaylist() {
+            const nameInput = document.getElementById('add-channel-to-playlist-name'); const logoInput = document.getElementById('add-channel-to-playlist-logo'); const urlInput = document.getElementById('add-channel-to-playlist-url');
+            const name = nameInput.value.trim(); const logo = logoInput.value.trim(); const url = urlInput.value.trim();
+            if (!name || !url) return showToast('Please provide both a name and a URL.');
+            const playlist = playlists.find(p => p.id === activePlaylistId); if (!playlist) return;
+            if (playlist.type === 'url') { playlist.type = 'text'; delete playlist.sourceUrl; showToast('Playlist converted to manual list. It will no longer sync with the URL.', 'info'); } 
+            else if (playlist.type === 'single') { playlist.type = 'text'; showToast('Playlist converted to a manual list.', 'info'); }
+            playlist.channels.push({ name, url, logo: logo || DEFAULT_LOGO_URL, type: 'm3u' });
+            saveAndRerender(); renderChannelList(playlist.channels); addChannelToPlaylistModal.hide(); nameInput.value = ''; urlInput.value = ''; logoInput.value = '';
             showToast('Stream added successfully!', 'success');
         }
         
@@ -139,47 +143,82 @@
             if (!name || !url) return showToast('Please provide both a name and a URL.');
             const channelId = extractYtChannelId(url); if (!channelId) return showToast('Invalid YouTube Channel URL.');
             const playlist = playlists.find(p => p.id === activePlaylistId); if (!playlist) return;
-            playlist.channels.push({ name: name, url: channelId, logo: 'https://www.youtube.com/s/desktop/9662365c/img/favicon_144x144.png', type: 'youtube' });
+            playlist.channels.push({ name, url: channelId, logo: 'https://www.youtube.com/s/desktop/9662365c/img/favicon_144x144.png', type: 'youtube' });
             saveAndRerender(); renderChannelList(playlist.channels); addYTChannelToPlaylistModal.hide(); nameInput.value = ''; urlInput.value = '';
             showToast('YouTube Channel added!', 'success');
         }
 
-        function openEditModal(playlistId) {
+        function openEditPlaylistModal(playlistId) {
             const p = playlists.find(p => p.id === playlistId); if (!p) return;
             editingPlaylistId = playlistId; document.getElementById('edit-playlist-name-input').value = p.name;
             ['youtube', 'url', 'text', 'single-stream'].forEach(t => document.getElementById(`edit-${t}-container`).classList.add('d-none'));
-            const ytEditContainer = document.getElementById('edit-youtube-container');
             switch (p.type) {
-                case 'youtube': 
-                    ytEditContainer.classList.remove('d-none'); 
-                    const canEditUrl = p.channels.length === 1;
-                    document.getElementById('edit-yt-channel-url').value = canEditUrl ? `https://www.youtube.com/channel/${p.channels[0].url}` : '';
-                    document.getElementById('edit-yt-channel-url').disabled = !canEditUrl;
-                    break;
+                case 'youtube': document.getElementById('edit-youtube-container').classList.remove('d-none'); document.getElementById('edit-yt-channel-url').value = p.channels.length === 1 ? `https://www.youtube.com/channel/${p.channels[0].url}` : ''; document.getElementById('edit-yt-channel-url').disabled = p.channels.length !== 1; break;
                 case 'url': document.getElementById('edit-url-container').classList.remove('d-none'); document.getElementById('edit-url-playlist-url').value = p.sourceUrl; break;
                 case 'text': document.getElementById('edit-text-container').classList.remove('d-none'); document.getElementById('edit-text-playlist-content').value = reconstructM3U(p.channels); break;
                 case 'single': document.getElementById('edit-single-stream-container').classList.remove('d-none'); document.getElementById('edit-single-channel-name').value = p.channels[0].name; document.getElementById('edit-single-channel-url').value = p.channels[0].url; break;
             }
-            editModal.show();
+            editPlaylistModal.show();
+        }
+
+        // NEW: Functions for editing a single channel
+        function openEditChannelModal(playlistId, channelIndex) {
+            const playlist = playlists.find(p => p.id === playlistId);
+            const channel = playlist?.channels[channelIndex];
+            if (!channel) return;
+
+            editingPlaylistId = playlistId;
+            editingChannelIndex = channelIndex;
+
+            document.getElementById('edit-channel-name').value = channel.name;
+            document.getElementById('edit-channel-logo').value = channel.logo === DEFAULT_LOGO_URL ? '' : channel.logo;
+            document.getElementById('edit-channel-url').value = channel.type === 'youtube' ? `https://www.youtube.com/channel/${channel.url}` : channel.url;
+            
+            editChannelModal.show();
+        }
+
+        function handleSaveChannelEdit() {
+            if (editingPlaylistId === null || editingChannelIndex < 0) return;
+            const playlist = playlists.find(p => p.id === editingPlaylistId);
+            const channel = playlist?.channels[editingChannelIndex];
+            if (!channel) return;
+
+            const newName = document.getElementById('edit-channel-name').value.trim();
+            const newLogo = document.getElementById('edit-channel-logo').value.trim();
+            const newUrlRaw = document.getElementById('edit-channel-url').value.trim();
+
+            if (!newName || !newUrlRaw) return showToast("Channel name and URL cannot be empty.");
+            
+            channel.name = newName;
+            channel.logo = newLogo || DEFAULT_LOGO_URL;
+
+            if (channel.type === 'youtube') {
+                const newId = extractYtChannelId(newUrlRaw);
+                if (!newId) return showToast("Invalid YouTube Channel URL.");
+                channel.url = newId;
+            } else {
+                channel.url = newUrlRaw;
+            }
+            
+            saveAndRerender();
+            renderChannelList(playlist.channels);
+            editChannelModal.hide();
+            showToast("Channel updated successfully!", "success");
         }
         
-        async function handleSaveEdit() {
+        async function handleSavePlaylistEdit() {
             if (!editingPlaylistId) return; const playlist = playlists.find(p => p.id === editingPlaylistId); if (!playlist) return;
             const newName = document.getElementById('edit-playlist-name-input').value.trim(); if (!newName) return showToast('Playlist name cannot be empty.'); playlist.name = newName;
             const saveBtn = document.getElementById('save-edit-playlist-btn'); toggleButtonLoading(saveBtn, true);
             try {
                 switch (playlist.type) {
-                    case 'youtube': 
-                        if (playlist.channels.length === 1) {
-                            const u = document.getElementById('edit-yt-channel-url').value.trim(); const id = extractYtChannelId(u); if (!id) throw new Error('Invalid YouTube Channel URL.'); playlist.channels[0].url = id;
-                        }
-                        break;
+                    case 'youtube': if (playlist.channels.length === 1) { const u = document.getElementById('edit-yt-channel-url').value.trim(); const id = extractYtChannelId(u); if (!id) throw new Error('Invalid YouTube Channel URL.'); playlist.channels[0].url = id; } break;
                     case 'url': const newUrl = document.getElementById('edit-url-playlist-url').value.trim(); if (!newUrl) throw new Error('Playlist URL cannot be empty.'); playlist.sourceUrl = newUrl; const r = await fetchWithProxyFallback(newUrl); playlist.channels = parseM3U(await r.text()); break;
                     case 'text': playlist.channels = parseM3U(document.getElementById('edit-text-playlist-content').value); break;
                     case 'single': const n = document.getElementById('edit-single-channel-name').value.trim(); const streamUrl = document.getElementById('edit-single-channel-url').value.trim(); if (!n || !streamUrl) throw new Error('Stream name and URL cannot be empty.'); playlist.channels[0].name = n; playlist.channels[0].url = streamUrl; break;
                 }
                 if (playlist.id === activePlaylistId) renderChannelList(playlist.channels);
-                saveAndRerender(); editModal.hide(); editingPlaylistId = null; showToast('Playlist updated successfully!', 'success');
+                saveAndRerender(); editPlaylistModal.hide(); editingPlaylistId = null; showToast('Playlist updated successfully!', 'success');
             } catch (error) { showToast(`Error saving changes: ${error.message}`); } finally { toggleButtonLoading(saveBtn, false); }
         }
 
@@ -187,15 +226,17 @@
             const name = document.getElementById('yt-channel-name').value.trim(); const url = document.getElementById('yt-channel-url').value.trim();
             if (!name) return showToast('Playlist name cannot be empty.');
             const newPlaylist = { id: `yt_${Date.now()}`, name: name, type: 'youtube', channels: [] };
-            if (url) {
-                const id = extractYtChannelId(url);
-                if (!id) return showToast('Invalid URL. Use the URL from "About" tab.');
-                newPlaylist.channels.push({ name: name, logo: 'https://www.youtube.com/s/desktop/9662365c/img/favicon_144x144.png', url: id, type: 'youtube' });
-            }
+            if (url) { const id = extractYtChannelId(url); if (!id) return showToast('Invalid URL. Use the URL from "About" tab.'); newPlaylist.channels.push({ name: name, logo: 'https://www.youtube.com/s/desktop/9662365c/img/favicon_144x144.png', url: id, type: 'youtube' }); }
             playlists.push(newPlaylist); saveAndRerender(); ytModal.hide(); showToast('YouTube Playlist created!', 'success');
         }
         function extractYtChannelId(u) { const m = u.match(/\/channel\/(UC[\w-]{22})/); return m ? m[1] : null; }
-        function addSingleStream() { const n = document.getElementById('single-channel-name').value.trim(); const u = document.getElementById('single-channel-url').value.trim(); if (!n || !u) return showToast('Please fill both fields.'); playlists.push({ id: `p_${Date.now()}`, name: n, type: 'single', channels: [{ name: n, logo: 'https://cdn-icons-png.flaticon.com/512/272/272037.png', url: u, type: 'm3u' }] }); saveAndRerender(); singleChannelModal.hide(); showToast('Stream added!', 'success'); }
+        
+        function addSingleStream() {
+            const n = document.getElementById('single-channel-name').value.trim(); const logo = document.getElementById('single-channel-logo').value.trim(); const u = document.getElementById('single-channel-url').value.trim();
+            if (!n || !u) return showToast('Please fill both name and URL fields.');
+            playlists.push({ id: `p_${Date.now()}`, name: n, type: 'single', channels: [{ name: n, logo: logo || DEFAULT_LOGO_URL, url: u, type: 'm3u' }] });
+            saveAndRerender(); singleChannelModal.hide(); showToast('Stream added!', 'success');
+        }
         
         async function fetchWithProxyFallback(url) { try { return await fetch(url); } catch (e) { showToast('Direct fetch failed, retrying with proxy...', 'info'); const proxyUrl = getProxyUrl() + encodeURIComponent(url); const r = await fetch(proxyUrl); if (!r.ok) throw new Error(`Proxy fetch also failed with status: ${r.status}`); return r; } }
         async function addPlaylistFromUrl() {
@@ -208,38 +249,20 @@
         function addPlaylistFromFile(e) { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = (ev) => { playlists.push({ id: `p_${Date.now()}`, name: f.name.replace(/\.[^/.]+$/, ""), channels: parseM3U(ev.target.result), type: 'text' }); saveAndRerender(); showToast(`Imported ${f.name}!`, 'success'); }; r.readAsText(f); e.target.value = null; }
         function deletePlaylist(id) { if (!confirm('Are you sure you want to delete this playlist?')) return; playlists = playlists.filter(p => p.id !== id); if (activePlaylistId === id) { activePlaylistId = null; localStorage.removeItem('activePlaylistId'); renderChannelList([]); } saveAndRerender(); showToast('Playlist deleted.', 'info'); }
         
-        // MODIFIED: This function now shows the "Add" button for all playlist types.
         function setActivePlaylist(id) {
             const p = playlists.find(p => p.id === id); if (!p) return; 
             activePlaylistId = id; localStorage.setItem('activePlaylistId', id); 
             renderChannelList(p.channels); renderPlaylistSidebar();
-
-            const addChannelBtn = document.getElementById('add-channel-to-playlist-btn');
-            const icon = addChannelBtn.querySelector('i');
-            
-            // Show the add button if any playlist is active
-            if (p) {
-                addChannelBtn.classList.remove('d-none');
-            } else {
-                addChannelBtn.classList.add('d-none');
-                return;
-            }
-            
-            // Configure the button based on playlist type
+            const addChannelBtn = document.getElementById('add-channel-to-playlist-btn'); const icon = addChannelBtn.querySelector('i');
+            if (p) { addChannelBtn.classList.remove('d-none'); } else { addChannelBtn.classList.add('d-none'); return; }
             if (p.type === 'youtube') {
-                addChannelBtn.classList.remove('btn-outline-primary');
-                addChannelBtn.classList.add('btn-outline-danger');
-                addChannelBtn.setAttribute('data-bs-toggle', 'modal');
-                addChannelBtn.setAttribute('data-bs-target', '#addYTChannelToPlaylistModal');
-                addChannelBtn.title = "Add YouTube Channel to this Playlist";
-                icon.className = 'bi bi-youtube';
-            } else { // For 'text', 'single', AND 'url' types
-                addChannelBtn.classList.remove('btn-outline-danger');
-                addChannelBtn.classList.add('btn-outline-primary');
-                addChannelBtn.setAttribute('data-bs-toggle', 'modal');
-                addChannelBtn.setAttribute('data-bs-target', '#addChannelToPlaylistModal');
-                addChannelBtn.title = "Add Stream to this Playlist";
-                icon.className = 'bi bi-plus-circle-fill';
+                addChannelBtn.classList.remove('btn-outline-primary'); addChannelBtn.classList.add('btn-outline-danger');
+                addChannelBtn.setAttribute('data-bs-toggle', 'modal'); addChannelBtn.setAttribute('data-bs-target', '#addYTChannelToPlaylistModal');
+                addChannelBtn.title = "Add YouTube Channel to this Playlist"; icon.className = 'bi bi-youtube';
+            } else {
+                addChannelBtn.classList.remove('btn-outline-danger'); addChannelBtn.classList.add('btn-outline-primary');
+                addChannelBtn.setAttribute('data-bs-toggle', 'modal'); addChannelBtn.setAttribute('data-bs-target', '#addChannelToPlaylistModal');
+                addChannelBtn.title = "Add Stream to this Playlist"; icon.className = 'bi bi-plus-circle-fill';
             }
         }
 
@@ -247,23 +270,39 @@
         function savePlaylistsToStorage() { localStorage.setItem('iptv_playlists', JSON.stringify(playlists)); }
         function loadPlaylistsFromStorage() { playlists = JSON.parse(localStorage.getItem('iptv_playlists') || '[]'); }
 
-        function renderPlaylistSidebar() { sidebarPlaylistList.innerHTML = playlists.length === 0 ? `<li class="p-4 text-center text-secondary">No playlists. Click '+' to add.</li>` : playlists.map(p => { const i = p.type === 'youtube' ? 'bi-youtube text-danger' : 'bi-file-earmark-play'; return `<li class="playlist-list-item d-flex justify-content-between align-items-center p-3 ${p.id === activePlaylistId ? 'active' : ''}" data-id="${p.id}"><span class="fw-bold text-truncate"><i class="bi ${i} me-2"></i>${p.name}</span><div class="btn-group"><button class="btn btn-sm btn-outline-info edit-playlist-btn"><i class="bi bi-pencil-fill"></i></button><button class="btn btn-sm btn-outline-danger delete-playlist-btn"><i class="bi bi-trash-fill"></i></button></div></li>`; }).join(''); }
+        function renderPlaylistSidebar() { sidebarPlaylistList.innerHTML = playlists.length === 0 ? `<li class="p-4 text-center text-secondary">No playlists. Click '+' to add.</li>` : playlists.map(p => { const i = p.type === 'youtube' ? 'bi-youtube text-danger' : 'bi-file-earmark-play'; return `<li class="playlist-list-item d-flex justify-content-between align-items-center p-3" data-id="${p.id}"><span class="fw-bold text-truncate"><i class="bi ${i} me-2"></i>${p.name}</span><div class="btn-group"><button class="btn btn-sm btn-outline-info edit-playlist-btn"><i class="bi bi-pencil-fill"></i></button><button class="btn btn-sm btn-outline-danger delete-playlist-btn"><i class="bi bi-trash-fill"></i></button></div></li>`; }).join(''); }
         
-        function renderChannelList(c) { 
-            const hasChannels = c && c.length > 0;
+        // MODIFIED: Renders each channel with an Edit button if the playlist is modifiable
+        function renderChannelList(channels) { 
+            const playlist = playlists.find(p => p.id === activePlaylistId);
+            const isModifiable = playlist && playlist.type !== 'url';
+
+            const hasChannels = channels && channels.length > 0;
             document.getElementById('search-container').classList.toggle('d-none', !hasChannels); 
             searchBar.value = ''; 
             if (!hasChannels) { 
-                const p = playlists.find(pl => pl.id === activePlaylistId);
-                const message = (p && p.type !== 'url') ? 'This playlist is empty. Add a channel to get started!' : 'Select or add a playlist.';
+                const message = (playlist && playlist.type !== 'url') ? 'This playlist is empty. Add a channel to get started!' : 'Select or add a playlist.';
                 channelList.innerHTML = `<li class="p-5 text-center text-secondary"><i class="bi bi-list fs-1"></i><p class="mt-2">${message}</p></li>`;
                 return; 
             } 
-            channelList.innerHTML = c.map(ch => `<li class="channel-item p-3" data-url="${ch.url}" data-name="${ch.name}" data-type="${ch.type || 'm3u'}"><img src="${ch.logo}" class="channel-logo me-3" alt="" onerror="this.src='https://cdn-icons-png.flaticon.com/512/272/272037.png';"><span class="fw-bold text-truncate">${ch.name}</span></li>`).join('') + `<li id="no-results-message" class="p-5 text-center text-secondary d-none">No channels match your search.</li>`; 
+            
+            channelList.innerHTML = channels.map((ch, index) => {
+                const editButtonHtml = isModifiable ? `<button class="btn btn-sm btn-outline-info edit-channel-btn ms-2"><i class="bi bi-pencil-fill"></i></button>` : '';
+                return `
+                <li class="channel-item d-flex justify-content-between align-items-center p-2" data-url="${ch.url}" data-name="${ch.name}" data-type="${ch.type || 'm3u'}" data-index="${index}">
+                    <div class="channel-item-clickable d-flex align-items-center text-truncate flex-grow-1 p-2">
+                        <img src="${ch.logo}" class="channel-logo me-3" alt="" onerror="this.onerror=null;this.src='${DEFAULT_LOGO_URL}';">
+                        <span class="fw-bold text-truncate">${ch.name}</span>
+                    </div>
+                    <div class="flex-shrink-0">
+                        ${editButtonHtml}
+                    </div>
+                </li>`;
+            }).join('') + `<li id="no-results-message" class="p-5 text-center text-secondary d-none">No channels match your search.</li>`; 
         }
         
-        function reconstructM3U(c) { return "#EXTM3U\n" + c.map(ch => `#EXTINF:-1 tvg-logo="${ch.logo}",${ch.name}\n${ch.url}`).join('\n'); }
-        function parseM3U(c) { return c.split('\n').reduce((a, l, i, ls) => { if (l.trim().startsWith('#EXTINF:')) { const u = ls[i + 1]?.trim() || ''; if (u && !u.startsWith('#')) { const info = l.trim(); const n = info.split(',').pop()?.trim() || 'Unknown'; const logo = info.match(/tvg-logo="([^"]*)"/)?.[1] || 'https://cdn-icons-png.flaticon.com/512/272/272037.png'; a.push({ name: n, logo, url: u, type: 'm3u' }); } } return a; }, []); }
+        function reconstructM3U(c) { return "#EXTM3U\n" + c.map(ch => `#EXTINF:-1 tvg-logo="${ch.logo || ''}",${ch.name}\n${ch.url}`).join('\n'); }
+        function parseM3U(c) { return c.split('\n').reduce((a, l, i, ls) => { if (l.trim().startsWith('#EXTINF:')) { const u = ls[i + 1]?.trim() || ''; if (u && !u.startsWith('#')) { const info = l.trim(); const n = info.split(',').pop()?.trim() || 'Unknown'; const logo = info.match(/tvg-logo="([^"]*)"/)?.[1] || DEFAULT_LOGO_URL; a.push({ name: n, logo, url: u, type: 'm3u' }); } } return a; }, []); }
 
         function playItem(i) {
             const { url, name, type } = i.dataset;
@@ -281,16 +320,13 @@
             hls.loadSource(finalUrl); hls.attachMedia(videoPlayer);
             hls.on(Hls.Events.MANIFEST_PARSED, () => hidePlayerSpinner());
             hls.on(Hls.Events.ERROR, (e, d) => {
-                if (d.fatal) {
-                    if (d.type === Hls.ErrorTypes.NETWORK_ERROR && !isRetry) { showToast('Direct stream failed. Retrying with proxy...', 'info'); playHlsStream(streamUrl, true); } 
-                    else { hidePlayerSpinner(); showToast(`Stream Error: Could not play stream. It may be offline or geo-blocked.`); showView('playlist-view'); }
-                }
+                if (d.fatal) { if (d.type === Hls.ErrorTypes.NETWORK_ERROR && !isRetry) { showToast('Direct stream failed. Retrying with proxy...', 'info'); playHlsStream(streamUrl, true); } else { hidePlayerSpinner(); showToast(`Stream Error: Could not play stream. It may be offline or geo-blocked.`); showView('playlist-view'); } }
             });
         }
 
         function stopAllPlayers() { if (hls) { hls.destroy(); hls = null; } videoPlayer.pause(); videoPlayer.src = ''; youtubePlayer.src = ''; hidePlayerSpinner(); }
         function showView(vId) { document.querySelectorAll('.main-view').forEach(v => v.classList.add('d-none')); document.getElementById(vId).classList.remove('d-none'); document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active')); const btn = vId === 'playlist-view' ? 'nav-playlist-btn' : 'nav-player-btn'; document.getElementById(btn).classList.add('active'); }
-        function handleSearch(e) { const t = e.target.value.toLowerCase().trim(); let v = 0; channelList.querySelectorAll('.channel-item').forEach(c => { const m = c.dataset.name.toLowerCase().includes(t); c.style.display = m ? 'flex' : 'none'; if(m) v++; }); const nR = document.getElementById('no-results-message'); if (nR) nR.classList.toggle('d-none', v > 0); }
+        function handleSearch(e) { const t = e.target.value.toLowerCase().trim(); let v = 0; channelList.querySelectorAll('.channel-item').forEach(c => { const m = c.querySelector('.channel-item-clickable').textContent.toLowerCase().includes(t); c.style.display = m ? 'flex' : 'none'; if(m) v++; }); const nR = document.getElementById('no-results-message'); if (nR) nR.classList.toggle('d-none', v > 0); }
         function showToast(message, type = 'danger') { const t = `<div class="toast align-items-center text-bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true"><div class="d-flex"><div class="toast-body">${message}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button></div></div>`; const c = document.querySelector('.toast-container'); c.insertAdjacentHTML('beforeend', t); new bootstrap.Toast(c.lastElementChild, { delay: 5000 }).show(); }
         function toggleButtonLoading(b, isLoading) { const s = b.querySelector('.spinner-border'); const t = b.querySelector('.button-text'); if (isLoading) { b.disabled = true; s?.classList.remove('d-none'); t?.classList.add('d-none'); } else { b.disabled = false; s?.classList.add('d-none'); t?.classList.remove('d-none'); } }
         function showPlayerSpinner() { playerOverlay.classList.remove('d-none'); }
